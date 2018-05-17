@@ -1,0 +1,15 @@
+{
+    "name": "String",
+    "desc": "String",
+    "lastModified": "String/TIMESTAMP",
+    "modifiedHistroy": [
+        "String/TIMESTAMP",
+        "..."
+    ],
+    "lastModifier": "String/USERNAME",
+    "modifierHistroy": [
+        "String/USERNAME",
+        "..."
+    ],
+    "lastFile": "5"
+}

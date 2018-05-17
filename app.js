@@ -38,10 +38,12 @@ mongoose.connect(process.env.DATABASEURL || 'mongodb://localhost/project');
 // ROUTES
 const indexRoutes   = require('./routes/index');
 const projectRoutes = require('./routes/projects');
+const projectBlogRoutes = require("./routes/projectBlog");
 
 
 app.use('/', indexRoutes);
 app.use('/projects', projectRoutes);
+app.use("/projectBlog", projectBlogRoutes);
 
 
 app.listen(process.env.PORT || 8888, process.env.IP,  () => {

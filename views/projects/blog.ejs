@@ -1,0 +1,49 @@
+<% include ../partials/header %>
+    <header>
+        <div class="header">
+            <h1>
+                <%=project.name%>
+            </h1>
+        </div>
+    </header>
+
+
+    </header>
+    <div class="info project-show">
+        <div class="info-content">
+            <img src="<%=project.img%>" alt="" class="img-fluid">
+        </div>
+        <div class="info-content">
+            <h4>About</h4>
+            <hr>
+            <p style="white-space: pre-wrap">
+                <%= project.desc %>
+            </p>
+        </div>
+    </div>
+    <div class="info">
+        <div class="info-content">
+            <h4>Team</h4>
+            <hr>
+            <% const teamArray = project.team.split(';');%>
+                <% teamArray.forEach((member) => { %>
+                    <p>
+                        <%= member %>
+                    </p>
+                    <% }); %>
+        </div>
+        <div class="info-content">
+            <h4>Advisor</h4>
+            <hr>
+            <p>
+                <%= project.advisor %>
+            </p>
+        </div>
+    </div>
+
+
+
+
+
+
+    <% include ../partials/footer %>

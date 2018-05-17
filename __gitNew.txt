@@ -1,0 +1,24 @@
+5/16/2018
+-routes/projectBlog.js
+---->This is the foundation of the basic blog for the future.
+---->So far it is barebone and only handles a basic get to / which is the same currently as bcctsem.*./projects/*
+
+
+-views/projects/blog.ejs
+---->The same as views/projects/show.ejs but will be modified to include blog posts on bottom, and mainly exists to avoid accidental changes
+-api
+---->Basic format to future api of mySQL/AWS RDS and AWS S3
+
+
+-api/mysql/projects.js
+---->Gets projects metadata from mySQL/AWS RDS based on the passed groupID
+---->Basic error handling
+
+
+-api/S3/projects.js
+---->Gets project JSON from S3 to get future files. Includes error handling as well as a object "__dangerousDoNotDisplayError" which shows a complex view of the error but should NOT be shown to user as it reveals the Node JS stack. If there are no errors returns the body of the JSON, status code, and ETag.
+---->Contains a function handleS3GetError() which filters the error to what is safe to show to user, even though it may not be useful.
+---->Contains a function getparams() which returns a basic params object to get the S3 Object
+
+-api/S3/projectSchema
+---->Basic layout of the project.json found in all project S3 Folders.
