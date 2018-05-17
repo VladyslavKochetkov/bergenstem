@@ -4,7 +4,8 @@ var S3 = new AWS.S3({
     secretAccessKey: "KQNEdyRWsbfXTk5CgMFWyRK8lqXX+3c+qBElJm/X",
 });
 
-function getProjectBlogMeta(projectID){
+// Expects an ID such as 0 - 0 is reserved for testing.
+async function getProjectBlogMeta(projectID){
     return new Promise((fulfill, reject) => {
         S3.getObject({
             Bucket: "bccstemlogs.us",
@@ -37,6 +38,14 @@ function getProjectBlogMeta(projectID){
     })
 }
 
+/*
+Expects a very specific object.
+{
+  projectID: Number, - 0 Is used for testing
+  name: String,
+  desc: String
+}
+*/
 function initializeNewProjectFolder(projectData){
     return new Promise((fulfill, reject) => {
         if(projectData.projectID == undefined){
@@ -49,8 +58,105 @@ function initializeNewProjectFolder(projectData){
             return reject("Project Data must contain a desc")
         }
 
-        S3.listObjects()
+      S3FolderExists(projectData.projectID).then((x) => {
+        if(x == true){
+          return reject("A project already exists with that projectID on S3");
+        }else{
+          var params = getparams(projectData.projectID, "project.json");
+          projectData.lastModified = new Date();
+          projectData.modifiedHistory = [
+            new Date()
+          ];
+          projectData.lastModifier = "DEVELOPER",
+          projectData.modifierHistory = [
+            "DEVELOPER"
+          ];
+          projectData.lastFile = "0";
+          var params = getparams(projectData.projectID, "project.json");
+          params.Body = new Buffer(JSON.stringify(projectData), "binary");
+          params.ServerSideEncryption = "AES256";
+          S3.putObject(params, (err, data) => {
+            if(err){
+              return reject({ error: "Unknown server error", status: 409, __dangerousShowError: err});
+            }
+            return fulfill({status: 200, ETag: data.ETag});
+          })
+        }
+      })
     })
+}
+
+// TODO: CHANGE PREFIX TO PATH
+function S3FolderExists(path){
+  return new Promise((fulfill, reject) => {
+    S3.listObjectsV2({Bucket: "bccstemlogs.us", Prefix: "0/", MaxKeys: 1}, (err, data) => {
+      if(data){
+        // Technically should only ever be 1 because we limit it to 1.
+        if(data.Contents.length >= 1){
+          return fulfill(true);
+        }else{
+          return fulfill(false);
+        }
+      }
+      if(err){
+        return reject({ error: "Unknown server error", __dangerousShowError: err});
+      }
+    })
+  })
+}
+
+async function S3FileExists(groupID, file){
+  return new Promise((fulfill, reject) => {
+    var params = {
+      Bucket: "bccstemlogs.us",
+      Prefix: groupID + "/" + file,
+      MaxKeys: 1
+    }
+    S3.listObjectsV2(params, (err, data) => {
+      if(err){
+        return reject({
+          error: "Unknown server error",
+          status: 409,
+          __dangerousShowError: err
+        })
+      }
+      if(data.Contents.length >= 1){
+        fulfill(true);
+      }else{
+        fulfill(false);
+      }
+    })
+  })
+}
+
+function writeS3File(groupID, file, data){
+  return new Promise(async (fulfill, reject) => {
+    var exists = await S3FileExists(groupID, file);
+    if(exists){
+      return reject("File already exists in S3 and duplicates are not allowed.");
+    }
+    var params = getparams(groupID, file);
+    if(isObject(data)){
+      params.Body = new Buffer(JSON.stringify(data), "binary");
+    }else{
+      params.Body = new Buffer(data, "binary");
+    }
+    
+    S3.putObject(params, (err, data) => {
+      if(err){
+        return reject({
+          error: "Unknown server error",
+          status: 409,
+          __dangerousShowError: err
+        });
+      }
+
+      return fulfill({
+        status: 200,
+        ETag: data.ETag
+      });
+    })
+  })
 }
 
 function handleS3GetError(err){
@@ -59,36 +165,46 @@ function handleS3GetError(err){
         code: err.code,
         region: err.region,
         time: err.time,
-        statusCode: statusCode
+        statusCode: err.statusCode
     }
 }
 
-// getProjectBlogMeta(140).then((x) => {
-//     console.log(x);
+function getparams(groupID, file) {
+  return {
+    Bucket: "bccstemlogs.us",
+    Key: groupID + "/" + file
+  }
+}
+
+function isObject(obj){
+  return (!!obj) && (obj.constructor === Object);
+}
+
+async function addBlogPost(projectData){
+  var metadata = await getProjectBlogMeta(0);
+  writeS3File(0, metadata.body.lastFile, {test: "test"})
+}
+
+addBlogPost();
+// ============== FOR TESTING ==============
+// initializeNewProjectFolder(projectDataTest)
+//     .then((x) => {
+//         console.log(x);
+//     }).catch((e) => {
+//         console.log(e);
+//     });
+//
+// =========================================
+//
+// getProjectBlogMeta(0).then((x) => {
+//   console.log(x);
 // }).catch((e) => {
-//     console.log(e);
+//   console.log(e);
 // })
-
-var projectDataTest = {
-    projectID: 0,
-    name: "TEST NAME",
-    desc: "TEST DESC"
-}
-
-initializeNewProjectFolder(projectDataTest)
-    .then((x) => {
-        console.log(x);
-    }).catch((e) => {
-        console.log(e);
-    })
-
-function getProjectBlogPost(groupID, file){
-
-}
-
-function getparams(groupID, file){
-    return {
-        Bucket: "bccstemlogs.us",
-        Key: groupID + "/" + file
-    }
-}
+// 
+// S3FileExists(0, 0).then((x) => {
+//   console.log(x);
+// }).catch((e) => {
+//   console.log(e);
+// })
+    
