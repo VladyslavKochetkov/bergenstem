@@ -348,6 +348,15 @@ function getProjectFiles(projectID, files){
     })
 }
 
+module.exports = {
+  initializeNewProjectFolder: initializeNewProjectFolder,
+  getProjectBlogMeta: getProjectBlogMeta,
+  updateProjectBlogMeta: updateProjectBlogMeta,
+  removeProject: removeProject,
+  addBlogPost, addBlogPost,
+  getProjectFiles, getProjectFiles
+}
+
 // getProjectFiles(140, [0,1,2]);
 
 // listObjects(0);
