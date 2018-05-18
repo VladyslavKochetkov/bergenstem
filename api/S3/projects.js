@@ -4,7 +4,6 @@ var S3 = new AWS.S3({
     secretAccessKey: "KQNEdyRWsbfXTk5CgMFWyRK8lqXX+3c+qBElJm/X",
 });
 
-// Expects an ID such as 0 - 0 is reserved for testing.
 async function getProjectBlogMeta(projectID){
     return new Promise((fulfill, reject) => {
         S3.getObject({
@@ -105,11 +104,11 @@ function S3FolderExists(path){
   })
 }
 
-async function S3FileExists(porjectID, file){
+async function S3FileExists(projectID, file){
   return new Promise((fulfill, reject) => {
     var params = {
       Bucket: "bccstemlogs.us",
-      Prefix: porjectID + "/" + file,
+      Prefix: projectID + "/" + file,
       MaxKeys: 1
     }
     S3.listObjectsV2(params, (err, data) => {
@@ -169,10 +168,10 @@ function handleS3GetError(err){
     }
 }
 
-function getparams(porjectID, file) {
+function getparams(projectID, file) {
   return {
     Bucket: "bccstemlogs.us",
-    Key: porjectID + "/" + file
+    Key: projectID + "/" + file
   }
 }
 
@@ -205,9 +204,15 @@ function updateProjectBlogMeta(projectData){
     })
 }
 
-async function addBlogPost(projectData){
+async function addBlogPost(blogPostData){
     try{
-        console.log(projectData.projectID);
+        var projectData = blogPostData;
+        if(projectData.data.length == 0){
+          return reject({
+            status: 409,
+            message: "Must include a body"
+          })
+        };
         var metadata = await getProjectBlogMeta(projectData.projectID);
         var put = await writeS3File(projectData.projectID, metadata.body.lastFile, projectData.data);
         var bodyMeta = metadata.body;
@@ -229,6 +234,16 @@ async function addBlogPost(projectData){
             __dangerousShowError: e
         }
     }
+}
+
+function removeProject(projectID) {
+  return new Promise((fulfill, reject) => {
+    removeFolder(projectID).then((x) => {
+      fulfill({status: 200, message: "success"});
+    }).catch((e) => {
+      reject({status: 409, error: "Unknown server error", __dangerousShowError: e});
+    })
+  })
 }
 
 function removeFolder(path){
@@ -295,54 +310,57 @@ function listObjects(path){
             var data = await S3.listObjectsV2(params).promise();
             return fulfill(data);
         }catch(e){
-            return reject(e);
+          return reject({__dangerousShowError: e});
         }
     })
 }
 
-async function getFile(files){
+function getFile(filePath){
     return new Promise(async (fulfill, reject) => {
-        var x = files.map(async (x) => {
-            console.log(x);
-        })
-        var req = await S3.getObjects({
-            Bucket: "bccstemlogs.us",
-            Key: url
+      try{
+        var x = await S3.getObject({
+          Bucket: "bccstemlogs.us",
+          Key: filePath
         }).promise();
-
-        req = {
-            lastModified: req.LastModified,
-            ETag: req.ETag,
-            Body: req.Body.toString()
-        }
-
-        console.log(req);
+        
+        return fulfill ({
+          LastModified: x.LastModified,
+          ETag: x.ETag,
+          Body: x.Body.toString()
+        })
+      }catch(e){
+        return fulfill({});
+      }
     })
 }
 
 function getProjectFiles(projectID, files){
     return new Promise(async (fulfill, reject) => {
-        var data = await files.map(async (x) => {
-            var url = (projectID + "/" + x);
-            var req = await getFile(url);
-            console.log(req);
-        });
+        var length = files.length;
+        var data = [];
+        for(var i = 0; i < length; i++){
+          var x = await getFile(projectID + "/" + files[i]);
+          x.Body = JSON.parse(x.Body);
+          data.push(x);
+        }
 
-        console.log(data);
+        fulfill(data);
     })
 }
 
-getProjectFiles(140, [0,1,2]);
+// getProjectFiles(140, [0,1,2]);
 
 // listObjects(0);
 
-var addBlogPostJSON = {
-    projectID: 0,
-    type: "BLOGPOST",
-    postedBy: "DEVELOPER",
-    time: new Date(),
-    data: "<div style='color: red'>TEST 2</div>"
-}
+// IF EDIT CHANGE Readme.md of TYPE and POSTEDBY
+// Make data mandatory
+// var addBlogPostJSON = {
+//     projectID: 0,
+//     type: "BLOGPOST",
+//     postedBy: "DEVELOPER",
+//     time: new Date(),
+//     data: "<div style='color: red'>TEST 2</div>"
+// }
 
 // removeFolder("0").then((x) => {
 //     console.log(x);
