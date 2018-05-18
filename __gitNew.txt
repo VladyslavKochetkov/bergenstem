@@ -22,3 +22,19 @@
 
 -api/S3/projectSchema
 ---->Basic layout of the project.json found in all project S3 Folders.
+
+5/17/2018
+-api/S3/projects.js
+---->Added function getProjectBlogMeta(). Gets the project.json of a project using the projectID passed. Contains some error handling.
+---->Added function initializeNewProjectFolder(). Created a new project in the S3. This created a folder based on the passed projectID. Contains error handling and some verification. It also created a project.json in the folder based on the information passed.
+---->Added function S3FolderExists(). Self explantory. Passed a number as number or string. Checks for folder like "140/".
+---->Added function S3FileExists(). Self explantory. Can take any valid path argument as string.
+---->Added function writeS3File().
+-------->Writed a file to a project folder and using the passed file name and pased data.
+---->Added function handleS3GetError(). Safely handles some errors.
+---->Added function isObject(). Checks if a passed argument is a JS object.
+---->Added function updateProjectBlogMeta(). Updated a project blogs project.json.
+-------->Replaced file with passed data.
+---->Added function addBlogPost(). This adds a file to the S3. File name is deteremined by the next file name in project.json in the relative S3 folder.
+---->Added function removeFolder(). This removed a whole folder from the S3 storage. This is used by a passed path such as "0/".
+---->Added function listObjects(). List objects in an S3 project folder.
